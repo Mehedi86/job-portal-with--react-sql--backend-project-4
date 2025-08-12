@@ -23,7 +23,16 @@ app.get('/api/users', (req, res) => {
   });
 });
 
-
+// all posted jobs from employers
+app.get('/api/jobs', (req, res) => {
+  pool.query('select * from jobs', (err, results) => {
+    if (err) {
+      console.error('Error fetching users:', err);
+      return res.status(500).json({ error: 'Database query error' });
+    }
+    res.json(results);
+  });
+});
 
 // Start server
 app.listen(port, () => {
