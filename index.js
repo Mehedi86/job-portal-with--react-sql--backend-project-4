@@ -1,8 +1,12 @@
 const express = require('express');
 const mysql = require('mysql2');
+const cors = require('cors');
 
 const app = express();
 const port = 3000;
+
+ 
+app.use(cors());
 
 // Create MySQL connection pool
 const pool = mysql.createPool({
@@ -25,9 +29,9 @@ app.get('/api/users', (req, res) => {
 
 // all posted jobs from employers
 app.get('/api/jobs', (req, res) => {
-  pool.query('select * from jobs', (err, results) => {
+  pool.query('SELECT * FROM jobs', (err, results) => {
     if (err) {
-      console.error('Error fetching users:', err);
+      console.error('Error fetching jobs:', err);
       return res.status(500).json({ error: 'Database query error' });
     }
     res.json(results);
