@@ -56,6 +56,32 @@ app.post("/api/users", (req, res) => {
   );
 });
 
+// LOGIN ROUTE
+app.post("/api/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  const query = "SELECT * FROM users WHERE email = ? AND password = ? LIMIT 1";
+  pool.query(query, [email, password], (err, results) => {
+    if (err) {
+      console.error("Error checking user:", err);
+      return res.status(500).json({ error: "Database query error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const user = results[0];
+    delete user.password; // Don't send password back
+    res.json({ ...user, authenticated: true });
+  });
+});
+
+
 // -------- JOBS ROUTES -------- //
 app.get("/api/jobs", (req, res) => {
   pool.query("SELECT * FROM jobs", (err, results) => {
