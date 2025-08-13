@@ -81,6 +81,30 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+// Get jobseeker profile from job_seeker_profiles only
+app.get("/api/jobseeker/:id", (req, res) => {
+  const { id } = req.params;
+
+  const query = "SELECT * FROM job_seeker_profiles WHERE user_id = ? LIMIT 1";
+
+  pool.query(query, [id], (err, results) => {
+    if (err) {
+      console.error("Error fetching jobseeker profile:", err);
+      return res.status(500).json({ error: "Database query error" });
+    }
+
+    if (results.length === 0) {
+      // Return empty object with status 200
+      return res.json({});
+    }
+
+    res.json(results[0]);
+  });
+});
+
+
+
+
 
 // -------- JOBS ROUTES -------- //
 app.get("/api/jobs", (req, res) => {
