@@ -185,6 +185,63 @@ app.get("/api/applied/:id", (req, res) => {
   });
 });
 
+// Get all jobs posted by a specific employer
+app.get("/api/employer/:id/jobs", (req, res) => {
+  const { id } = req.params; // employer user ID
+
+  const query = `
+    SELECT 
+      j.id AS job_id,
+      j.company,
+      j.title,
+      j.description,
+      j.category,
+      j.location,
+      j.status,
+      j.created_at,
+      j.updated_at
+    FROM jobs j
+    WHERE j.employer_id = ?
+    ORDER BY j.created_at DESC
+  `;
+
+  pool.query(query, [id], (err, results) => {
+    if (err) {
+      console.error("Error fetching employer jobs:", err);
+      return res.status(500).json({ error: "Database query error" });
+    }
+    res.json(results); // returns [] if no jobs found
+  });
+});
+
+// Update job status (open/closed)
+app.put("/api/job/:jobId/status", (req, res) => {
+  const { jobId } = req.params;
+  const { status } = req.body;
+
+  if (!["open", "closed"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status value" });
+  }
+
+  const query = `
+    UPDATE jobs 
+    SET status = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `;
+
+  pool.query(query, [status, jobId], (err, result) => {
+    if (err) {
+      console.error("Error updating job status:", err);
+      return res.status(500).json({ error: "Database update error" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    res.json({ message: `Job status updated to ${status}` });
+  });
+});
 
 
 // -------- JOBS ROUTES -------- //
