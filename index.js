@@ -103,6 +103,59 @@ app.get("/api/jobseeker/:id", (req, res) => {
 });
 
 
+// Update or insert jobseeker profile
+app.put("/api/jobseeker/:id", (req, res) => {
+  const { id } = req.params;
+  const { phone, address, resume_path, skills, experience, education } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  // First check if profile exists
+  pool.query(
+    "SELECT id FROM job_seeker_profiles WHERE user_id = ? LIMIT 1",
+    [id],
+    (err, results) => {
+      if (err) {
+        console.error("Error while checking profile:", err);
+        return res.status(500).json({ error: "user not found!!" });
+      }
+
+      if (results.length > 0) {
+        // Update existing profile
+        pool.query(
+          `UPDATE job_seeker_profiles 
+           SET phone = ?, address = ?, resume_path = ?, skills = ?, experience = ?, education = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = ?`,
+          [phone, address, resume_path, skills, experience, education, id],
+          (err2) => {
+            if (err2) {
+              console.error("Error updating profile:", err2);
+              return res.status(500).json({ error: "Database update error" });
+            }
+            res.json({ message: "Profile updated successfully" });
+          }
+        );
+      } else {
+        // Insert new profile if not exists
+        pool.query(
+          `INSERT INTO job_seeker_profiles 
+           (user_id, phone, address, resume_path, skills, experience, education) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [id, phone, address, resume_path, skills, experience, education],
+          (err3) => {
+            if (err3) {
+              console.error("Error inserting profile:", err3);
+              return res.status(500).json({ error: "Database insert error" });
+            }
+            res.json({ message: "Profile created successfully" });
+          }
+        );
+      }
+    }
+  );
+});
 
 
 
