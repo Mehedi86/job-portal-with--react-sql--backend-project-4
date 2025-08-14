@@ -243,6 +243,72 @@ app.put("/api/job/:jobId/status", (req, res) => {
   });
 });
 
+// Get all jobs posted by a specific employer with jobseeker applications
+app.get("/api/employer/:id/job-applications", (req, res) => {
+  const { id } = req.params; // employer user ID
+
+  const query = `
+    SELECT 
+      j.id AS job_id,
+      j.title,
+      j.company,
+      j.location,
+      j.status AS job_status,
+      ja.id AS application_id,
+      ja.status AS application_status,
+      ja.applied_at,
+      u.id AS job_seeker_id,
+      u.name AS job_seeker_name,
+      u.email AS job_seeker_email,
+      p.phone,
+      p.address,
+      p.resume_path,
+      p.skills,
+      p.experience,
+      p.education
+    FROM jobs j
+    LEFT JOIN job_applications ja ON j.id = ja.job_id
+    LEFT JOIN users u ON ja.job_seeker_id = u.id
+    LEFT JOIN job_seeker_profiles p ON u.id = p.user_id
+    WHERE j.employer_id = ?
+    ORDER BY j.created_at DESC, ja.applied_at DESC
+  `;
+
+  pool.query(query, [id], (err, results) => {
+    if (err) {
+      console.error("Error fetching employer job applications:", err);
+      return res.status(500).json({ error: "Database query error" });
+    }
+    res.json(results);
+  });
+});
+
+// Create a new job post
+app.post("/api/jobs", (req, res) => {
+  const { employer_id, title, description, category, location, company } = req.body;
+
+  if (!employer_id || !title || !description || !company) {
+    return res.status(400).json({ error: "employer_id, title, description, and company are required" });
+  }
+
+  const query = `
+    INSERT INTO jobs (employer_id, title, description, category, location, company)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  pool.query(
+    query,
+    [employer_id, title, description, category || null, location || null, company],
+    (err, result) => {
+      if (err) {
+        console.error("Error inserting job:", err);
+        return res.status(500).json({ error: "Database insert error" });
+      }
+      res.status(201).json({ message: "Job posted successfully", jobId: result.insertId });
+    }
+  );
+});
+
 
 // -------- JOBS ROUTES -------- //
 app.get("/api/jobs", (req, res) => {
