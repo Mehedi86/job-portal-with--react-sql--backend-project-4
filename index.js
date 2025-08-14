@@ -157,6 +157,34 @@ app.put("/api/jobseeker/:id", (req, res) => {
   );
 });
 
+// Get applied jobs for a user
+app.get("/api/applied/:id", (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT 
+      ja.id AS application_id,
+      ja.status,
+      ja.applied_at,
+      j.id AS job_id,
+      j.company,
+      j.title,
+      j.location
+    FROM job_applications ja
+    JOIN jobs j ON ja.job_id = j.id
+    WHERE ja.job_seeker_id = ?
+    ORDER BY ja.applied_at DESC
+  `;
+
+  pool.query(query, [id], (err, results) => {
+    if (err) {
+      console.error("Error fetching applied jobs:", err);
+      return res.status(500).json({ error: "Database query error" });
+    }
+    res.json(results); // Returns [] if no jobs applied
+  });
+});
+
 
 
 // -------- JOBS ROUTES -------- //
