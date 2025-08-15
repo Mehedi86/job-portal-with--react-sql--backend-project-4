@@ -309,6 +309,32 @@ app.post("/api/jobs", (req, res) => {
   );
 });
 
+// Apply for a job
+app.post("/api/job-applications", (req, res) => {
+  const { job_id, job_seeker_id } = req.body;
+
+  if (!job_id || !job_seeker_id) {
+    return res.status(400).json({ error: "job_id and job_seeker_id are required" });
+  }
+
+  const query = `
+    INSERT INTO job_applications (job_id, job_seeker_id)
+    VALUES (?, ?)
+  `;
+
+  pool.query(query, [job_id, job_seeker_id], (err, result) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(400).json({ error: "You have already applied for this job" });
+      }
+      console.error("Error inserting job application:", err);
+      return res.status(500).json({ error: "Database insert error" });
+    }
+
+    res.status(201).json({ message: "Application submitted successfully", applicationId: result.insertId });
+  });
+});
+
 
 // -------- JOBS ROUTES -------- //
 app.get("/api/jobs", (req, res) => {
